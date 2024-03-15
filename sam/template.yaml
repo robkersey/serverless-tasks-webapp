@@ -28,6 +28,28 @@ Resources:
       CodeUri: src/auth
       Handler: app.handler
 
+  # CreateTask Lambda Function
+  CreateTaskFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/createTask
+      Handler: app.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Environment:
+        Variables:
+          TASKS_TABLE: !Ref TasksTable
+      Events:
+        PostTaskFunctionApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TasksApi
+            Path: /tasks
+            Method: POST
+            Auth:
+              Authorizer: MyLambdaTokenAuthorizer
+
   GetTasksFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -148,6 +170,23 @@ Resources:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+
+   # Create DynamoDB table
+  TasksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "user"
+          AttributeType: "S"
+        - AttributeName: "id"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "user"
+          KeyType: "HASH"
+        - AttributeName: "id"
+          KeyType: "RANGE"
+      BillingMode: PAY_PER_REQUEST
+
 
 Outputs:
   TasksApi:
